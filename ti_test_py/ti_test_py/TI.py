@@ -13,6 +13,7 @@ class get_data:
         self.cfg_path = cfg_path
         self.connected = False
         self.config_params = {}
+        self._found_rate = 0
         self._timeout = timeout
         self._buffer_temp = b''
         self._start_time = time.time()
@@ -45,27 +46,31 @@ class get_data:
             for i in ti_config:
                 self.command_port.write((i+"\n").encode())
                 time.sleep(0.01)
-                print("Configuration Done!")
+            print("Configuration Done!")
         except:
             print("cfg file wrong...")
+            self.close()
             return None
         for i in ti_config:
             split_words = i.split(" ")
-            if "frameCfg" in split_words[0]:
+            if not self._found_rate and "frameCfg" in split_words[0]:
                 self._ms_per_frame = float(split_words[5])
                 print("Found frameCfg, milliseconds per frame is ", self._ms_per_frame)
-            else:
-                print("cfg parameters wrong")
-                return None
+                self._found_rate = 1
+                break
+        if not self._found_rate:
+            print("cfg parameters wrong")
+            self.close()
+            return None
     
     def _parse_data(self, buffer):
             start = buffer.index(self._magicWord)+40
-            print("start")
+            # print("start")
             ####  tvl1  ####
             (tlv_type, tlv_length), i = self._unpack(buffer, i=start, amount=2, data_type='I')
             # print(tlv_type, tlv_length, i)
             num_points=int(tlv_length/16)
-            data=np.zeros((num_points,4),dtype=np.float)
+            data=np.zeros((num_points,4),dtype=float)
             if(int(tlv_type)==1):
                 for j in range(num_points):
                     try:

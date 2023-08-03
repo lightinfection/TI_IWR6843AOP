@@ -3,14 +3,15 @@
 <package format="3">
   <name>ti_test_py</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
-  <maintainer email="lightinfected@hotmail.com">lscm</maintainer>
+  <description>Read uart data from ti iwr6843aopevm mmwave sensor and publish the data in ros2 env</description>
+  <maintainer email="lightinfected@hotmail.com">gyro</maintainer>
   <license>TODO: License declaration</license>
 
   <depend>rclpy</depend>
   <depend>ros2launch</depend>
   <depend>std_msgs</depend>
   <depend>sensor_msgs</depend>
+  <depend>sensor_msgs.msg</depend>
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>

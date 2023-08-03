@@ -1,3 +1,5 @@
+import os
+from glob import glob
 from setuptools import setup
 
 package_name = 'ti_test_py'
@@ -10,16 +12,18 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
+        (os.path.join('share', package_name), glob('launch/*launch.py'))
     ],
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='lscm',
+    maintainer='gyro',
     maintainer_email='lightinfected@hotmail.com',
-    description='TODO: Package description',
+    description='Read uart data from ti iwr6843aopevm mmwave sensor and publish the data in ros2 env',
     license='TODO: License declaration',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+            'pcl_pub = ti_test_py.pc_publisher:main',
         ],
     },
 )
