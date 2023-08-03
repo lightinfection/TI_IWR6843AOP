@@ -32,7 +32,7 @@ A different method is used when parsing serial port data, and more pointclouds c
    ```
 3. Revise parameters in the launch file
 
-    <img src="defined.png" width="50%" height="50%">
+    <img src="defined.png" width="75%" height="75%">
 
 4. Start
     ```sh
