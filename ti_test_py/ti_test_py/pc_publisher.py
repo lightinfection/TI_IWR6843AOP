@@ -6,6 +6,7 @@ import signal
 import rclpy
 import numpy as np
 import std_msgs.msg
+import multiprocessing
 from sensor_msgs.msg import PointCloud2
 from sensor_msgs.msg import PointField
 from rclpy.node import Node
@@ -13,7 +14,7 @@ from rclpy.qos import QoSProfile, QoSHistoryPolicy, QoSReliabilityPolicy
 from .TI import get_data
 
 class rospublisher(Node):
-    def __init__(self, queue_size=100):
+    def __init__(self, queue_size=100, max_depth=multiprocessing.cpu_count()):
         super().__init__('iwr6843aop')
         global cfg_path
         global command_port
@@ -34,7 +35,7 @@ class rospublisher(Node):
         qos_profile = QoSProfile(
             reliability=QoSReliabilityPolicy.RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT,
             history=QoSHistoryPolicy.RMW_QOS_POLICY_HISTORY_KEEP_LAST,
-            depth=10
+            depth=max_depth
         )
         self.publisher_ = self.create_publisher(PointCloud2, topic, qos_profile)
         self.ti = get_data(command_port=command_port, data_port=data_port, cfg_path=cfg_path)
