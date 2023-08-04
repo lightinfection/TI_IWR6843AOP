@@ -31,7 +31,6 @@ class rospublisher(Node):
         data_port = self.get_parameter('data_port').get_parameter_value().string_value
         topic = self.get_parameter('topic').get_parameter_value().string_value
         frame_id = self.get_parameter('frame_id').get_parameter_value().string_value
-        
         qos_profile = QoSProfile(
             reliability=QoSReliabilityPolicy.RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT,
             history=QoSHistoryPolicy.RMW_QOS_POLICY_HISTORY_KEEP_LAST,
@@ -51,7 +50,7 @@ class rospublisher(Node):
     def _pull_to_queue(self):
         # print("pull threading",threading.current_thread().ident)
         g = self.ti._read()
-        while 1:
+        while rclpy.ok(context=self._context):
             try:
                 res = next(g)
                 time.sleep(self.ti._ms_per_frame/2000)
@@ -71,7 +70,7 @@ class rospublisher(Node):
             
     def _read_from_queue(self):
         empty_times = 0
-        while 1:
+        while rclpy.ok(context=self._context):
             if(self._pcbuffer.empty()):
                 empty_times += 1
                 time.sleep(self.ti._ms_per_frame/2000)
