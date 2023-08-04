@@ -43,8 +43,8 @@ class rospublisher(Node):
         self._pcbuffer = queue.Queue(queue_size)
         def parse_data():
             return self._pull_to_queue()
-        t = threading.Thread(target=parse_data)
-        t.start()
+        self._t = threading.Thread(target=parse_data)
+        self._t.start()
         
 
     def _pull_to_queue(self):
@@ -111,8 +111,7 @@ class rospublisher(Node):
     def release(self):
         self.ti.close()
         with self._pcbuffer.mutex:
-                    self._pcbuffer.queue.clear()
-        self._t.join()
+            self._pcbuffer.queue.clear()
 
 def ctrlc_handler(signum, frame):
     global shut_down
