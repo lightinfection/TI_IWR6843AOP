@@ -41,22 +41,19 @@ class rospublisher(Node):
         self.timer = self.create_timer(float(self.ti._ms_per_frame/1000), self._timer_callback)
         
         self._pcbuffer = queue.Queue(queue_size)
-        def parse_data():
-            return self._pull_to_queue()
-        self._t = threading.Thread(target=parse_data)
+        self._t = threading.Thread(target=self._producer,args=(self.ti._read(),))
         self._t.start()
         
-
-    def _pull_to_queue(self):
+    def _producer(self, g):
         # print("pull threading",threading.current_thread().ident)
-        g = self.ti._read()
+        action = g
         while rclpy.ok(context=self._context):
             try:
-                res = next(g)
-                time.sleep(self.ti._ms_per_frame/2000)
+                res = next(action)
+                time.sleep(float(self.ti._ms_per_frame/2000))
             except Exception as exception:
                 print(exception)
-                g = self.ti._read()
+                action = g
             try:
                 self._pcbuffer.put_nowait(res)
                 # print("after putting",self._pcbuffer.qsize())
@@ -68,12 +65,12 @@ class rospublisher(Node):
                 self.release()
                 return
             
-    def _read_from_queue(self):
+    def _consumer(self):
         empty_times = 0
         while rclpy.ok(context=self._context):
             if(self._pcbuffer.empty()):
                 empty_times += 1
-                time.sleep(self.ti._ms_per_frame/2000)
+                time.sleep(float(self.ti._ms_per_frame/4000))
                 continue
             else:
                 empty_times = 0
@@ -89,7 +86,7 @@ class rospublisher(Node):
                 continue
     
     def _timer_callback(self):
-        cloud_arr = np.asarray(self._read_from_queue()).astype(np.float32)
+        cloud_arr = np.asarray(self._consumer()).astype(np.float32)
         pcl_msg = PointCloud2()
         pcl_msg.header = std_msgs.msg.Header()
         pcl_msg.header.stamp = self.get_clock().now().to_msg()
