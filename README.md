@@ -1,7 +1,12 @@
 # TI_IWR6843AOP_ROS2
 
+By ros2 rviz2:
+
 <img src="rviz2.gif" width="50%" height="50%">
 
+By visualizer.py:
+
+<img src="./ti_test_py/animation.gif" width="50%" height="50%">
 
 Refered to: 
 ```sh
