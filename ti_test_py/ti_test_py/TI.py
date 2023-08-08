@@ -133,7 +133,7 @@ class get_data:
             return None
 
     def _reset_timer(self):
-        self._timeout = time.time()
+        self._start_time = time.time()
     
     def _clear_buffer(self):
         self._buffer_temp = b''
