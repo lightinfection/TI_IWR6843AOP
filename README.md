@@ -17,7 +17,7 @@ Another example: https://github.com/nhma20/iwr6843aop_pub
 
 A different method is used when parsing serial port data, and more pointclouds can be acquired without instant failure.
 
-<img src="./ti_test_py/img/benchmark/screenshot.png" width="50%" height="50%">
+<img src="./ti_test_py/img/benchmark/screenshot.png" width="80%" height="80%">
 
 ["chrome://tracing/"](chrome://tracing/) is used to visualize threads, and the json for demo is located in the benchmark folder. However, the function is not neccessary when using the sensor. Ignore the benchmark module whenever you want.
 
