@@ -19,7 +19,7 @@ A different method is used when parsing serial port data, and more pointclouds c
 
 <img src="./ti_test_py/img/benchmark/screenshot.png">
 
-["chrome://tracing/"](chrome://tracing/) is used to visualize threads, and the json for demo is located in the benchmark folder. However, the function is not neccessary when using the sensor. Ignore the benchmark module whenever you want.
+```chrome://tracing/``` is used to visualize threads, and the json for demo is located in the benchmark folder. However, the function is not neccessary when using the sensor. Ignore the benchmark module whenever you want.
 
 ### Enviornment
 
