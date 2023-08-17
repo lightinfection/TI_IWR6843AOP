@@ -2,11 +2,11 @@
 
 By ros2 rviz2:
 
-<img src="rviz2.gif" width="50%" height="50%">
+<img src="./ti_test_py/img/rviz2.gif" width="50%" height="50%">
 
 By visualizer.py:
 
-<img src="./ti_test_py/animation.gif" width="50%" height="50%">
+<img src="./ti_test_py/img/animation.gif" width="50%" height="50%">
 
 Refered to: 
 ```sh
@@ -16,6 +16,10 @@ git clone https://git.ti.com/git/mmwave_radar/mmwave_ti_ros.git
 Another example: https://github.com/nhma20/iwr6843aop_pub
 
 A different method is used when parsing serial port data, and more pointclouds can be acquired without instant failure.
+
+<img src="./ti_test_py/img/benchmark/screenshot.png" width="50%" height="50%">
+
+["chrome://tracing/"](chrome://tracing/) is used to visualize threads, and the json for demo is located in the benchmark folder. However, the function is not neccessary when using the sensor. Ignore the benchmark module whenever you want.
 
 ### Enviornment
 
@@ -37,7 +41,7 @@ A different method is used when parsing serial port data, and more pointclouds c
    ```
 3. Revise parameters in the launch file
 
-    <img src="defined.png" width="75%" height="75%">
+    <img src="./ti_test_py/img/defined.png" width="75%" height="75%">
 
 4. Start
     ```sh

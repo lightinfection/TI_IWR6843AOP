@@ -12,7 +12,7 @@ CEILING = 10
 
 class AnimatedScatter(object):
     def __init__(self):
-        self.detected_points=get_data(command_port="/dev/ttyUSB0", data_port="/dev/ttyUSB1", cfg_path=os.getcwd()+'/src/ti_mmwave_sensor/mmwave_sensor/ti_test_py/cfg/staticRetention.cfg')
+        self.detected_points=get_data(command_port="/dev/ttyUSB0", data_port="/dev/ttyUSB1", cfg_path=os.getcwd()+'/src/TI_IWR6843AOP_ROS2/ti_test_py/cfg/staticRetention.cfg')
         self.fig = plt.figure()
         self.ax = self.fig.add_subplot(111,projection = '3d')
         self.ani = animation.FuncAnimation(self.fig, self.update, interval=int(self.detected_points._ms_per_frame/10), frames=np.arange(0,20),
@@ -40,7 +40,7 @@ class AnimatedScatter(object):
         plt.draw()
         return self.scat,
 
-    def save(self, path=os.getcwd()+"/src/ti_mmwave_sensor/mmwave_sensor/ti_test_py/animation.gif"):
+    def save(self, path=os.getcwd()+"/src/TI_IWR6843AOP_ROS2/ti_test_py/img/animation.gif"):
         self.ani.save(path, dpi=300, fps=30, writer="imagemagick")
         self.detected_points.close()
 

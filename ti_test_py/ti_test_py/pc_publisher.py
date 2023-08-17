@@ -12,6 +12,7 @@ from sensor_msgs.msg import PointField
 from rclpy.node import Node
 from rclpy.qos import QoSProfile, QoSHistoryPolicy, QoSReliabilityPolicy
 from .TI import get_data
+from .benchmark import InstrumentationTimer, Instrumentor
 
 class rospublisher(Node):
     def __init__(self, queue_size=100, max_depth=multiprocessing.cpu_count()):
@@ -48,6 +49,7 @@ class rospublisher(Node):
         # print("pull threading",threading.current_thread().ident)
         action = g
         while rclpy.ok(context=self._context):
+            self.producer_timer = InstrumentationTimer()
             try:
                 res = next(action)
                 time.sleep(float(self.ti._ms_per_frame/2000))
@@ -56,6 +58,7 @@ class rospublisher(Node):
                 action = g
             try:
                 self._pcbuffer.put_nowait(res)
+                self.producer_timer.stop()
                 # print("after putting",self._pcbuffer.qsize())
             except queue.Full:
                 print("Fail to put data into queue because it's full already")
@@ -66,6 +69,7 @@ class rospublisher(Node):
                 return
             
     def _consumer(self):
+        self.consumer_timer = InstrumentationTimer()
         empty_times = 0
         while rclpy.ok(context=self._context):
             if(self._pcbuffer.empty()):
@@ -78,48 +82,51 @@ class rospublisher(Node):
                 self.release()
                 print("not receiving data for 10s, relase queue")
                 return
+            global shut_down
+            if shut_down == 1:
+                self.release()
+                return
             try:
                 # print("after getting", self._pcbuffer.qsize())
-                return self._pcbuffer.get_nowait()
+                output = self._pcbuffer.get_nowait()
+                self.consumer_timer.stop()
+                return output
             except Exception as exception:
                 print(exception)
                 continue
-    
+            
     def _timer_callback(self):
-        cloud_arr = np.asarray(self._consumer()).astype(np.float32)
-        pcl_msg = PointCloud2()
-        pcl_msg.header = std_msgs.msg.Header()
-        pcl_msg.header.stamp = self.get_clock().now().to_msg()
-        pcl_msg.header.frame_id = frame_id
-        pcl_msg.height = 1
-        pcl_msg.width = cloud_arr.shape[0]
-        pcl_msg.fields =   [PointField(name='x', offset=0, datatype=PointField.FLOAT32, count=1),
-                            PointField(name='y', offset=4, datatype=PointField.FLOAT32, count=1),
-                            PointField(name='z', offset=8, datatype=PointField.FLOAT32, count=1),
-                            PointField(name='intensity', offset=12, datatype=PointField.FLOAT32, count=1),
-                            ]  
-        pcl_msg.point_step = cloud_arr.dtype.itemsize*cloud_arr.shape[1]
-        pcl_msg.row_step = pcl_msg.point_step*cloud_arr.shape[0]
-        pcl_msg.is_dense = True
-        pcl_msg.data = cloud_arr.tostring()
-        self.publisher_.publish(pcl_msg)
-        self.get_logger().info('Publishing %s points' % cloud_arr.shape[0] )
+        if rclpy.ok(context=self._context):
+            self.spin_timer = InstrumentationTimer()
+            cloud_arr = np.asarray(self._consumer()).astype(np.float32)
+            pcl_msg = PointCloud2()
+            pcl_msg.header = std_msgs.msg.Header()
+            pcl_msg.header.stamp = self.get_clock().now().to_msg()
+            pcl_msg.header.frame_id = frame_id
+            pcl_msg.height = 1
+            pcl_msg.width = cloud_arr.shape[0]
+            pcl_msg.fields =   [PointField(name='x', offset=0, datatype=PointField.FLOAT32, count=1),
+                                PointField(name='y', offset=4, datatype=PointField.FLOAT32, count=1),
+                                PointField(name='z', offset=8, datatype=PointField.FLOAT32, count=1),
+                                PointField(name='intensity', offset=12, datatype=PointField.FLOAT32, count=1),
+                                ]  
+            pcl_msg.point_step = cloud_arr.dtype.itemsize*cloud_arr.shape[1]
+            pcl_msg.row_step = pcl_msg.point_step*cloud_arr.shape[0]
+            pcl_msg.is_dense = True
+            pcl_msg.data = cloud_arr.tostring()
+            self.publisher_.publish(pcl_msg)
+            self.get_logger().info('Publishing %s points' % cloud_arr.shape[0] )
+            self.spin_timer.stop()
     
     def release(self):
+        self.producer_timer.stop()
+        self.consumer_timer.stop()
+        self.spin_timer.stop()
         self.ti.close()
         with self._pcbuffer.mutex:
             self._pcbuffer.queue.clear()
 
-def ctrlc_handler(signum, frame):
-    global shut_down
-    shut_down = 1
-    time.sleep(0.25)
-    print("Exiting")
-    exit(1)     
-
 def main():
-    signal.signal(signal.SIGINT, ctrlc_handler)
-
     global shut_down
     shut_down = 0
     global data_port
@@ -127,18 +134,34 @@ def main():
     global command_port
     command_port = '/dev/ttyUSB0'
     global cfg_path
-    cfg_path = os.getcwd() + '/src/ti_mmwave_sensor/mmwave_sensor/ti_test_py/cfg/staticRetention.cfg'
+    cfg_path = os.getcwd() + '/src/TI_IWR6843AOP_ROS2/ti_test_py/cfg/staticRetention.cfg'
     global topic
     topic = "ti_mmwave_0"
     global frame_id
     frame_id = "ti_mmwaver_0"
 
+    signal.signal(signal.SIGINT, ctrlc_handler)
+    global vis
+    vis = Instrumentor()
+    vis.BeginSession()
+    global timer
+    timer = InstrumentationTimer()
     rclpy.init()
     minimal_publisher = rospublisher()
     rclpy.spin(minimal_publisher)
     minimal_publisher._t.join()
     minimal_publisher.destroy_node()
     rclpy.shutdown()
+    timer.stop()
+    vis.EndSession()
+
+def ctrlc_handler(signum, frame):
+    shut_down = 1
+    time.sleep(0.25)
+    print("Exiting")
+    timer.stop()
+    vis.EndSession()
+    exit(1)
 
 if __name__ == '__main__':
     main()
