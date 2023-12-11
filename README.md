@@ -15,7 +15,7 @@ git clone https://git.ti.com/git/mmwave_radar/mmwave_ti_ros.git
 
 Another example: https://github.com/nhma20/iwr6843aop_pub
 
-A different method is used when parsing serial port data, and more pointclouds can be acquired without instant failure.
+A different method is used when parsing serial port data, and more pointclouds can be acquired without instant failure. Now the offical driver version for ros2 is released: git://git.ti.com/mmwave_radar/mmwave_ti_ros.git
 
 <img src="./ti_test_py/img/benchmark/screenshot.png">
 
