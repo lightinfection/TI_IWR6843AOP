@@ -39,10 +39,10 @@ class rospublisher(Node):
         )
         self.publisher_ = self.create_publisher(PointCloud2, topic, qos_profile)
         self.ti = get_data(command_port=command_port, data_port=data_port, cfg_path=cfg_path)
-        self.timer = self.create_timer(float(self.ti._ms_per_frame/1000), self._timer_callback)
+        self.timer = self.create_timer(float(self.ti.ms_per_frame/1000), self._timer_callback)
         
         self._pcbuffer = queue.Queue(queue_size)
-        self._t = threading.Thread(target=self._producer,args=(self.ti._read(),))
+        self._t = threading.Thread(target=self._producer,args=(self.ti.read(),))
         self._t.start()
         
     def _producer(self, g):
@@ -52,7 +52,7 @@ class rospublisher(Node):
             self.producer_timer = InstrumentationTimer()
             try:
                 res = next(action)
-                time.sleep(float(self.ti._ms_per_frame/2000))
+                time.sleep(float(self.ti.ms_per_frame/2000))
             except Exception as exception:
                 print(exception)
                 action = g
@@ -74,7 +74,7 @@ class rospublisher(Node):
         while rclpy.ok(context=self._context):
             if(self._pcbuffer.empty()):
                 empty_times += 1
-                time.sleep(float(self.ti._ms_per_frame/4000))
+                time.sleep(float(self.ti.ms_per_frame/4000))
                 continue
             else:
                 empty_times = 0
