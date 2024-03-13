@@ -1,1 +1,5 @@
 ti_test_py/ti_test_py/__pycache__
+build/
+install/
+log/
+/docker

@@ -1,54 +1,67 @@
 # TI_IWR6843AOP
 
-### Enviornment
-
-- ROS2 (Ubuntu 22.04 & humble)
-- Python3 (3.10.12)
-- IWR6843AOPEVM (ES2) mmWave radar device flashed with out-of-box firmware
-- docker (optional)
-
-By rviz2 (a [dockerfile](./ros2_rviz_docker/humble_docker/Dockerfile) is provided for setting up a lightweight ros2 environment on the remote client side):
-
-<img src="./ti_test_py/img/rviz2.gif" width="50%" height="50%">
-
-By [visualizer.py](./ti_test_py/ti_test_py/visualize.py):
-
-<img src="./ti_test_py/img/animation.gif" width="30%" height="30%">
-
-A different method is used when parsing serial port data, and more pointclouds can be acquired without instant failure. Now the official driver version for ros2 has been released: 
+Now the official driver version for ros2 has been released: 
 
 git://git.ti.com/mmwave_radar/mmwave_ti_ros.git
 
-```chrome://tracing/``` is used to visualize threads, and the json for demo is located in the [benchmark folder](./ti_test_py/img/benchmark/). However, the function is not necessary when using the sensor. Ignore the benchmark module if not appealing.
-<img src="./ti_test_py/img/benchmark/screenshot.png" width="80%" height="80%">
+### Enviornment
+
+- IWR6843AOPEVM (ES2) mmWave radar device flashed with out-of-box firmware
+- Python3 (3.10.12)
+- ROS2 (Ubuntu 22.04 & humble) (local or docker)
+
+<!-- A [dockerfile](./ros2_rviz_docker/humble_docker/Dockerfile) is provided for building a container where mmwave can run. -->
 
 ### Installation
 
-1. Clone the repo to workspace
+#### Local
+1. Clone to your workspace
    ```sh
-   cd ~/${workspace}/src/
    git clone https://github.com/lightinfection/TI_IWR6843AOP.git
    ```
-2. Colcon build package
+2. Build package (Using GDB to build objecti_detection package)
    ```sh
-   cd ~/${workspace}
-   colcon build --packages-select ti_test_py
+   colcon build --cmake-args '-DCMAKE_BUILD_TYPE=RelWithDebInfo' --packages-select object_detection
+   colcon build --packages-select object_detection
+   source install/setup.bash
    ```
-3. Revise parameters in the launch file
 
-    <img src="./ti_test_py/img/defined.png" width="50%" height="50%">
+<!-- #### Docker -->
 
-### Run the mmWave sensor
+### Use the mmWave sensor in local ROS2
 
-1. Start
+#### Single-frame
+1. Plugin mmWave sensor and start (if using debug mode, please load [.json](./src/ti_ros2_driver/debug/result.json) to chrome://tracing/ for log visualization)
     ```sh
-    source ./install/setup.bash
-    ros2 launch ti_test_py 6843aop_3d_0.launch.py
+    ros2 launch ti_ros2_driver 6843aop_3d_0.launch.py
     ```
-
-2. (Optional) Review pointcloud data by rviz in a docker container: 
+2. Filters for mmWave single frame signals (Examples)
     ```sh
-    cd ./ros2_rviz_docker && ./build.sh
-    ./rviz_remote.sh
-    cd robot_remote/robot_rviz && rviz2 -d ${rviz_filename}
+    ## passthrough filters + statiscal outlier removal
+    ros2 launch object_detection filter_for_ti_static.launch.py
+    ## noise removal by dbscan clustering
+    ros2 launch object_detection filter_for_dbscan_cluster.launch.py
     ```
+3. Check outcomes on RVIZ
+    ```sh
+    cd src/object_detection/rviz
+    rviz2 -d mmwave_single_frame.rviz
+    ```
+    <img src="./img/single.png" width="50%" height="50%">
+    <img src="./img/single_cluster.png" width="50%" height="50%">
+
+#### Multi-frames
+1. Prepare mmWave multiple frames data (raw pointcloud saved in either pcd or octomap)
+
+2. Post Processing
+    ```sh
+    ## filter(Optional) + difference of L2 normal extraction
+    ros2 launch object_detection filter_for_ti_dynamic.launch.py
+    ```
+    Statistical Outlier Removal + DON
+
+    <img src="./img/multi.png" width="50%" height="50%">
+
+    DBSCAN + DON
+
+    <img src="./img/multi_cluster.png" width="50%" height="50%">
