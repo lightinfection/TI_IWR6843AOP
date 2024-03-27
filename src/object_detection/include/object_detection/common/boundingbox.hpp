@@ -36,6 +36,7 @@ public:
             auto bound = std::partition(points.begin(), points.end(), [ID](Point& pt) {return (pt.clusterID == ID);});
             if (bound != points.begin()) 
             {
+                marker->points.resize(bound-points.begin());
                 for (int ch = 0; ch < 3; ch++) get_maxmin(points, bound, ch);
                 initialized = true;
             }
@@ -56,10 +57,12 @@ public:
             case 0:
                 max = points.front().x;
                 min = points.front().x;
+                marker->points[0].x = points.front().x;
                 for (std::vector<Point>::iterator it=points.begin()+1; it!=mid; ++it)
                 {
                     if (it->x > max) max = it->x;
                     if (it->x < min) min = it->x;
+                    marker->points[it-points.begin()].x = it->x;
                 }
                 marker->scale.x = max - min + 0.2;
                 marker->pose.position.x = min + marker->scale.x/2 - 0.1;
@@ -67,10 +70,12 @@ public:
             case 1:
                 max = points.front().y;
                 min = points.front().y;
+                marker->points[0].y = points.front().y;
                 for (std::vector<Point>::iterator it=points.begin()+1; it!=mid; ++it)
                 {
                     if (it->y > max) max = it->y;
                     if (it->y < min) min = it->y;
+                    marker->points[it-points.begin()].y = it->y;
                 }
                 marker->scale.y = max - min + 0.2;
                 marker->pose.position.y =  min + marker->scale.y/2 - 0.1;
@@ -78,10 +83,12 @@ public:
             case 2:
                 max = points.front().z;
                 min = points.front().z;
+                marker->points[0].z = points.front().z;
                 for (std::vector<Point>::iterator it=points.begin()+1; it!=mid; ++it)
                 {
                     if (it->z > max) max = it->z;
                     if (it->z < min) min = it->z;
+                    marker->points[it-points.begin()].z = it->z;
                 }
                 marker->scale.z = max - min + 0.2;
                 marker->pose.position.z =  min + marker->scale.z/2 - 0.1;

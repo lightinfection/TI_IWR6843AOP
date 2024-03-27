@@ -71,7 +71,7 @@ public:
         if(dbs.success) pcl::toROSMsg(*don_rgb.outcloud_don, output_don);
         else pcl::toROSMsg(*don.outcloud_don, output_don);
       } 
-      else RCLCPP_ERROR(rclcpp::get_logger("ti_mmwave"), "parameters of different of normals setting went wrong"); 
+      else RCLCPP_ERROR(rclcpp::get_logger(), "parameters of different of normals setting went wrong"); 
     }
   }
 

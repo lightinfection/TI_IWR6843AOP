@@ -20,8 +20,8 @@ public:
     sensor_qos.keep_last(10);
     oricloud = pcl::PointCloud<pcl::PointXYZI>::Ptr (new pcl::PointCloud<pcl::PointXYZI>);
     subscription_ = this->create_subscription<sensor_msgs::msg::PointCloud2>("/ti_mmwave/radar_scan_pcl", sensor_qos, std::bind(&minimalsubscriber::topic_callback, this, std::placeholders::_1));
-    RCLCPP_INFO(rclcpp::get_logger("ti_mmwave"), "Subscribed! \n");
-    if (!pth.success && !sor.success) {RCLCPP_ERROR(rclcpp::get_logger("ti_mmwave"), "filter parameters setting went wrong\n");}
+    RCLCPP_INFO(rclcpp::get_logger(), "Subscribed! \n");
+    if (!pth.success && !sor.success) {RCLCPP_ERROR(rclcpp::get_logger(), "filter parameters setting went wrong\n");}
     if (pth.success) publisher_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("ti_PTH_filt_out_0", sensor_qos);
     if (sor.success) publisher1_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("ti_SOR_filt_out_0", sensor_qos);
   }
@@ -78,7 +78,7 @@ private:
     ch.if_reverse = this->declare_parameter(reverse_, false);
     ch.lower_limit = this->declare_parameter(min_, 0.1);
     ch.upper_limit = this->declare_parameter(max_, 1.1);
-    RCLCPP_INFO(rclcpp::get_logger("ti_mmwave"), "set done: %.2f, %.2f, %d \n", ch.lower_limit, ch.upper_limit, ch.if_reverse);
+    RCLCPP_INFO(rclcpp::get_logger(), "set done: %.2f, %.2f, %d \n", ch.lower_limit, ch.upper_limit, ch.if_reverse);
   }
 
   rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr subscription_;

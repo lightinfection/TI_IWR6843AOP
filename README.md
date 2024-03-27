@@ -19,10 +19,10 @@ git://git.ti.com/mmwave_radar/mmwave_ti_ros.git
    ```sh
    git clone https://github.com/lightinfection/TI_IWR6843AOP.git
    ```
-2. Build package (Using GDB to build objecti_detection package)
+2. Build package (Using GDB to build object_detection package if cmake-args is declared as below)
    ```sh
    colcon build --cmake-args '-DCMAKE_BUILD_TYPE=RelWithDebInfo' --packages-select object_detection
-   colcon build --packages-select object_detection
+   colcon build --packages-select ti_ros2_driver
    source install/setup.bash
    ```
 
@@ -35,6 +35,8 @@ git://git.ti.com/mmwave_radar/mmwave_ti_ros.git
     ```sh
     ros2 launch ti_ros2_driver 6843aop_3d_0.launch.py
     ```
+    <img src="./img/debug.png" width="75%" height="75%">
+    
 2. Filters for mmWave single frame signals (Examples)
     ```sh
     ## passthrough filters + statiscal outlier removal
@@ -47,8 +49,8 @@ git://git.ti.com/mmwave_radar/mmwave_ti_ros.git
     cd src/object_detection/rviz
     rviz2 -d mmwave_single_frame.rviz
     ```
-    <img src="./img/single.png" width="50%" height="50%">
-    <img src="./img/single_cluster.png" width="50%" height="50%">
+    <img src="./img/single.png" width="75%" height="75%">
+    <img src="./img/single_cluster.png" width="75%" height="75%">
 
 #### Multi-frames
 1. Prepare mmWave multiple frames data (raw pointcloud saved in either pcd or octomap)
@@ -60,8 +62,8 @@ git://git.ti.com/mmwave_radar/mmwave_ti_ros.git
     ```
     Statistical Outlier Removal + DON
 
-    <img src="./img/multi.png" width="50%" height="50%">
+    <img src="./img/multi.png" width="75%" height="75%">
 
     DBSCAN + DON
 
-    <img src="./img/multi_cluster.png" width="50%" height="50%">
+    <img src="./img/multi_cluster.png" width="75%" height="75%">

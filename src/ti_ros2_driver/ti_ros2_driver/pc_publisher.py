@@ -32,8 +32,8 @@ class rospublisher(Node):
         self.topic_ = self.get_parameter("topic").get_parameter_value().string_value
         self.frame_id_ = self.get_parameter("frame_id").get_parameter_value().string_value
         self.debug_ = self.get_parameter("debug_mode").get_parameter_value().bool_value
-        print(self.debug_)
-        ## ros node
+        
+        ## ros node and qos
         qos_profile = QoSProfile(
             reliability=QoSReliabilityPolicy.RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT,
             history=QoSHistoryPolicy.RMW_QOS_POLICY_HISTORY_KEEP_LAST,
@@ -46,22 +46,19 @@ class rospublisher(Node):
         self.ti = get_data(command_port=self.command_port_, data_port=self.data_port_, cfg_path=self.cfg_path_)
 
         self.cv = threading.Condition()
-        t_datain = threading.Thread(target=self.__producer,args=(self.ti.read(),))
-        t_dataout = threading.Thread(target=self.__consumer)
-        t_datain.start()
-        t_dataout.start()
-
-        t_datain.join()
-        t_dataout.join()
-        self.destroy_node()
-        rclpy.shutdown()
+        self.t_datain = threading.Thread(target=self.__producer,args=(self.ti.read(),))
+        self.t_dataout = threading.Thread(target=self.__consumer)
+        self.shut_down = 0
+        if self.debug_: self.enterDebugMode()
+        self.t_datain.start()
+        self.t_dataout.start()
         
     def __producer(self, g):
         # print("pull threading",threading.current_thread().ident)
         action = g
-        while rclpy.ok(context=self._context):
+        while self.shut_down==0:
             time.sleep(float(self.ti._ms_per_frame/4000))
-            if(self.debug_): self.producer_timer = InstrumentationTimer()
+            if(self.debug_): producer_timer = InstrumentationTimer()
             try:
                 res = next(action)
             except Exception as exception:
@@ -76,17 +73,13 @@ class rospublisher(Node):
             except queue.Full:
                 print("Fail to put data into queue because it's full already")
                 pass
-            if(self.debug_): self.producer_timer.stop()
-            global shut_down
-            if shut_down == 1:
-                self._release()
-                return
+            if(self.debug_): producer_timer.stop()
             
     def __consumer(self):
         pcl_msg = PointCloud2()
         empty_times = 0
-        while rclpy.ok(context=self._context):
-            if(self.debug_): self.consumer_timer = InstrumentationTimer()
+        while self.shut_down==0:
+            if(self.debug_): consumer_timer = InstrumentationTimer()
             self.cv.acquire()
             while True:
                 if(not self._pcbuffer.empty()):
@@ -119,49 +112,45 @@ class rospublisher(Node):
                     
                 empty_times += 1
                 if(empty_times>20):
-                    self._release()
-                    print("not receiving data, relase queue")
-                    return
+                    if(self.debug_): 
+                        consumer_timer.stop()
+                        self.timer.stop()
+                        self.vis.EndSession()
+                    print("no data received, queue released")
+                    self.release_ros()
                 self.publisher_.publish(pcl_msg)
                 pcl_msg.fields.clear()
                 self.cv.wait()
             self.cv.release()
-            if(self.debug_): self.consumer_timer.stop()
-            global shut_down
-            if shut_down == 1:
-                self._release()
-                return
-    
-    def _release(self):
-        if(self.debug_): self.producer_timer.stop()
-        if(self.debug_): self.consumer_timer.stop()
+            if(self.debug_): consumer_timer.stop()
+
+    def enterDebugMode(self):
+        self.vis = Instrumentor()
+        self.vis.BeginSession()
+        self.timer = InstrumentationTimer()
+
+    def release_ros(self):
+        print("Clearing ros node")
+        self.shut_down = 1
+        self.t_datain.join()
+        self.t_dataout.join()
+        with self._pcbuffer.mutex:
+            self._pcbuffer.queue.clear()
         self.destroy_node()
         rclpy.shutdown()
         self.ti.close()
-        with self._pcbuffer.mutex:
-            self._pcbuffer.queue.clear()
+        print("Exiting")
+        exit(1)
 
-def main():
-    global shut_down, vis, timer
-    shut_down = 0
-    signal.signal(signal.SIGINT, ctrlc_handler)
-    
+    def ctrlc_handler(self, signum, frame):
+        if(self.debug_):self.timer.stop()
+        if(self.debug_):self.vis.EndSession()
+        self.release_ros()
+
+def main(): 
     rclpy.init()
-    vis = Instrumentor()
-    vis.BeginSession()
-    timer = InstrumentationTimer()
     minimal_publisher = rospublisher()
-    timer.stop()
-    vis.EndSession()
-
-def ctrlc_handler(signum, frame):
-    global shut_down
-    shut_down = 1
-    timer.stop()
-    vis.EndSession()
-    time.sleep(0.25)
-    print("Exiting")
-    exit(1)
+    signal.signal(signal.SIGINT, minimal_publisher.ctrlc_handler)
 
 if __name__ == '__main__':
     main()
