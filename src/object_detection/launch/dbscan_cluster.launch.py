@@ -1,8 +1,11 @@
 from launch import LaunchDescription
 from launch_ros.actions import Node
+from launch.actions import IncludeLaunchDescription
+from ament_index_python.packages import get_package_share_path
 
 def generate_launch_description():
     return LaunchDescription([
+        IncludeLaunchDescription(str(get_package_share_path('ti_ros2_driver') / 'launch/6843aop_3d_0.launch.py')),
         Node(
             package="object_detection",
             executable="dbscan",
@@ -19,5 +22,9 @@ def generate_launch_description():
             ],
             output="screen",
             emulate_tty=True
-        )
+        ),
+        Node(
+            package='rviz2', executable='rviz2', name='rviz2', output='screen',
+            arguments=['-d', str(get_package_share_path('object_detection') / 'rviz/mmwave_single_frame_dbscan.rviz')],
+        ),
     ])

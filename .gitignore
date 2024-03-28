@@ -2,5 +2,5 @@ ti_test_py/ti_test_py/__pycache__
 build/
 install/
 log/
-docker/
+src/ti_ros2_driver/debug/result.json
 .vscode/

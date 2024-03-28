@@ -13,13 +13,13 @@ public:
     db.set_params(r, num, bb, frame, node_name);
     sensor_qos.keep_last(10);
     subscription_ = this->create_subscription<sensor_msgs::msg::PointCloud2>("/ti_mmwave/radar_scan_pcl", sensor_qos, std::bind(&minimalsubscriber::topic_callback, this, std::placeholders::_1));
-    RCLCPP_INFO(rclcpp::get_logger(), "Subscribed! \n");
+    RCLCPP_INFO(this->get_logger(), "Subscribed! \n");
     if(db.success) 
     {
       publisher_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("dbscan_output", sensor_qos);
       if (bb) publisher_marker = this->create_publisher<visualization_msgs::msg::MarkerArray>("dbscan_box", 10);
     }
-    else RCLCPP_ERROR(rclcpp::get_logger(), "parameters setting went wrong\n");
+    else RCLCPP_ERROR(this->get_logger(), "parameters setting went wrong\n");
   }
 
 private:
@@ -40,7 +40,7 @@ private:
     bb = this->declare_parameter("bounding_boxes", true);
     frame = this->declare_parameter("target_frame", "map");
     node_name = this->declare_parameter("name_box", "dbscan_cluster");
-    RCLCPP_INFO(rclcpp::get_logger(), "set done: %.2f, %d, %d, %s, %s \n", r, num, bb, frame.c_str(), node_name.c_str());
+    RCLCPP_INFO(this->get_logger(), "set done: %.2f, %d, %d, %s, %s \n", r, num, bb, frame.c_str(), node_name.c_str());
   }
 
   rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr subscription_;

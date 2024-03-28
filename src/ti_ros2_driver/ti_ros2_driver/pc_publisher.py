@@ -26,12 +26,14 @@ class rospublisher(Node):
         self.declare_parameter('topic', "ti_mmwave_0")
         self.declare_parameter('frame_id', "ti_mmwaver_0")
         self.declare_parameter("debug_mode", False)
+        self.declare_parameter("debug_log_path", os.getcwd() + '/src/ti_ros2_driver/debug/result.json')
         self.cfg_path_ = self.get_parameter("cfg_path").get_parameter_value().string_value
         self.command_port_ = self.get_parameter("command_port").get_parameter_value().string_value
         self.data_port_ = self.get_parameter("data_port").get_parameter_value().string_value
         self.topic_ = self.get_parameter("topic").get_parameter_value().string_value
         self.frame_id_ = self.get_parameter("frame_id").get_parameter_value().string_value
         self.debug_ = self.get_parameter("debug_mode").get_parameter_value().bool_value
+        self.debug_log_path_ = self.get_parameter("debug_log_path").get_parameter_value().string_value
         
         ## ros node and qos
         qos_profile = QoSProfile(
@@ -126,7 +128,7 @@ class rospublisher(Node):
 
     def enterDebugMode(self):
         self.vis = Instrumentor()
-        self.vis.BeginSession()
+        self.vis.BeginSession(self.debug_log_path_)
         self.timer = InstrumentationTimer()
 
     def release_ros(self):

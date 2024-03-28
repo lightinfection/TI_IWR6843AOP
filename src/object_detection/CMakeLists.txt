@@ -70,9 +70,10 @@ install(TARGETS
   dbscan
   DESTINATION lib/${PROJECT_NAME})
 
-ament_package()
-
 install(DIRECTORY
-  launch
+  launch rviz map
   DESTINATION share/${PROJECT_NAME}/
 )
+
+ament_package()
+

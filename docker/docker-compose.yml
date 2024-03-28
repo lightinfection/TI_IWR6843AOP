@@ -1,0 +1,114 @@
+version: '3'
+
+services:
+    ti_single:
+        profiles: ['single_frame']
+        image: ti_humble:latest
+        build: 
+            context: .
+            dockerfile: ./Dockerfile
+        privileged: true
+        network_mode: host
+        ipc: host
+        restart: 'always'
+        volumes:
+            - /dev:/dev
+            - /dev/bus/usb:/dev/bus/usb
+            - /dev/usb/:/dev/usb/
+            - /dev/serial/:/dev/serial/
+            - /dev/ttyUSB0/:/dev/ttyUSB0/
+            - /dev/ttyUSB1/:/dev/ttyUSB1/
+            - /dev/ttyUSB2/:/dev/ttyUSB2/
+            - /dev/ttyUSB3/:/dev/ttyUSB3/
+            - /tmp/.X11-unix:/tmp/.X11-unix
+            - /var/opt/container-data/ti_humble/:/config/:ro
+        environment:
+            ROS_DOMAIN_ID: 28
+            DISPLAY: $DISPLAY
+        hostname: TI
+        container_name: ti_single
+        command: ["ros2", "launch", "object_detection", "filter_for_ti_static.launch.py"]
+    
+    ti_single_dbscan:
+        profiles: ['single_frame_dbscan']
+        image: ti_humble:latest
+        build: 
+            context: .
+            dockerfile: ./Dockerfile
+        privileged: true
+        network_mode: host
+        ipc: host
+        restart: 'always'
+        volumes:
+            - /dev:/dev
+            - /dev/bus/usb:/dev/bus/usb
+            - /dev/usb/:/dev/usb/
+            - /dev/serial/:/dev/serial/
+            - /dev/ttyUSB0/:/dev/ttyUSB0/
+            - /dev/ttyUSB1/:/dev/ttyUSB1/
+            - /dev/ttyUSB2/:/dev/ttyUSB2/
+            - /dev/ttyUSB3/:/dev/ttyUSB3/
+            - /tmp/.X11-unix:/tmp/.X11-unix
+            - /var/opt/container-data/ti_humble/:/config/:ro
+        environment:
+            ROS_DOMAIN_ID: 28
+            DISPLAY: $DISPLAY
+        hostname: TI
+        container_name: ti_single_dbscan
+        command: ["ros2", "launch", "object_detection", "dbscan_cluster.launch.py"]
+    
+    ti_multi:
+        profiles: ['map']
+        image: ti_humble:latest
+        build: 
+            context: .
+            dockerfile: ./Dockerfile
+        privileged: true
+        network_mode: host
+        ipc: host
+        restart: 'always'
+        volumes:
+            - /dev:/dev
+            - /dev/bus/usb:/dev/bus/usb
+            - /dev/usb/:/dev/usb/
+            - /dev/serial/:/dev/serial/
+            - /dev/ttyUSB0/:/dev/ttyUSB0/
+            - /dev/ttyUSB1/:/dev/ttyUSB1/
+            - /dev/ttyUSB2/:/dev/ttyUSB2/
+            - /dev/ttyUSB3/:/dev/ttyUSB3/
+            - /tmp/.X11-unix:/tmp/.X11-unix
+            - /var/opt/container-data/ti_humble/:/config/:ro
+        environment:
+            ROS_DOMAIN_ID: 28
+            DISPLAY: $DISPLAY
+        hostname: TI
+        container_name: ti_multi
+        command: ["ros2", "launch", "object_detection", "filter_for_ti_dynamic.launch.py"]
+
+    ti_multi_dbscan:
+        profiles: ['map_dbscan']
+        image: ti_humble:latest
+        build: 
+            context: .
+            dockerfile: ./Dockerfile
+        privileged: true
+        network_mode: host
+        ipc: host
+        restart: 'always'
+        volumes:
+            - /dev:/dev
+            - /dev/bus/usb:/dev/bus/usb
+            - /dev/usb/:/dev/usb/
+            - /dev/serial/:/dev/serial/
+            - /dev/ttyUSB0/:/dev/ttyUSB0/
+            - /dev/ttyUSB1/:/dev/ttyUSB1/
+            - /dev/ttyUSB2/:/dev/ttyUSB2/
+            - /dev/ttyUSB3/:/dev/ttyUSB3/
+            - /tmp/.X11-unix:/tmp/.X11-unix
+            - /var/opt/container-data/ti_humble/:/config/:ro
+        environment:
+            ROS_DOMAIN_ID: 28
+            DISPLAY: $DISPLAY
+        hostname: TI
+        container_name: ti_multi_dbscan
+        command: ["ros2", "launch", "object_detection", "dbscan_cluster_map.launch.py"]
