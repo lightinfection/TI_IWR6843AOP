@@ -1,9 +1,10 @@
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp/logger.hpp>
 #include <pcl_conversions/pcl_conversions.h>
+#include "object_detection/common/PointTI.h"
+#include "object_detection/common/param.h"
 #include "object_detection/filter/passthrough_filter.hpp"
 #include "object_detection/filter/statistical_outlier_removal.hpp"
-#include "object_detection/common/param.h"
 
 class minimalsubscriber : public rclcpp::Node
 {
@@ -18,7 +19,7 @@ public:
                pth_param.i.if_channel, pth_param.i.lower_limit, pth_param.i.upper_limit, pth_param.i.if_reverse);
     if (sor_param.if_channel) sor.set_param(sor_param.lower_limit, sor_param.upper_limit, sor_param.if_reverse);
     sensor_qos.keep_last(10);
-    oricloud = pcl::PointCloud<pcl::PointXYZI>::Ptr (new pcl::PointCloud<pcl::PointXYZI>);
+    oricloud = pcl::PointCloud<PointTI>::Ptr (new pcl::PointCloud<PointTI>);
     subscription_ = this->create_subscription<sensor_msgs::msg::PointCloud2>("/ti_mmwave/radar_scan_pcl", sensor_qos, std::bind(&minimalsubscriber::topic_callback, this, std::placeholders::_1));
     RCLCPP_INFO(this->get_logger(), "Subscribed! \n");
     if (!pth.success && !sor.success) {RCLCPP_ERROR(this->get_logger(), "filter parameters setting went wrong\n");}
@@ -85,9 +86,9 @@ private:
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr publisher_, publisher1_;
   rclcpp::SensorDataQoS sensor_qos;
 
-  passthrough_filter<pcl::PointXYZI> pth;
-  stat_outlier<pcl::PointXYZI> sor;
-  pcl::PointCloud<pcl::PointXYZI>::Ptr oricloud;
+  passthrough_filter<PointTI> pth;
+  stat_outlier<PointTI> sor;
+  pcl::PointCloud<PointTI>::Ptr oricloud;
   sensor_msgs::msg::PointCloud2 output, output_1;
 
   config pth_param;

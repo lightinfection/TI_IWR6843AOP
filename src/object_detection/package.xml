@@ -3,8 +3,8 @@
 <package format="3">
   <name>object_detection</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
-  <maintainer email="ros2@todo.todo">ros2</maintainer>
+  <description>TODO: object detection for ti mmwave sensor</description>
+  <maintainer email="lightinfected@hotmail.com">Gyro</maintainer>
   <license>TODO: License declaration</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>

@@ -98,6 +98,7 @@ class rospublisher(Node):
                                             PointField(name='y', offset=4, datatype=PointField.FLOAT32, count=1),
                                             PointField(name='z', offset=8, datatype=PointField.FLOAT32, count=1),
                                             PointField(name='intensity', offset=12, datatype=PointField.FLOAT32, count=1),
+                                            PointField(name='velocity', offset=16, datatype=PointField.FLOAT32, count=1),
                                             ]  
                         pcl_msg.point_step = cloud_arr.dtype.itemsize*cloud_arr.shape[1]
                         pcl_msg.row_step = pcl_msg.point_step*cloud_arr.shape[0]
@@ -119,6 +120,7 @@ class rospublisher(Node):
                         self.timer.stop()
                         self.vis.EndSession()
                     print("no data received, queue released")
+                    self.shut_down = 1
                     self.release_ros()
                 self.publisher_.publish(pcl_msg)
                 pcl_msg.fields.clear()
@@ -133,9 +135,6 @@ class rospublisher(Node):
 
     def release_ros(self):
         print("Clearing ros node")
-        self.shut_down = 1
-        self.t_datain.join()
-        self.t_dataout.join()
         with self._pcbuffer.mutex:
             self._pcbuffer.queue.clear()
         self.destroy_node()
@@ -147,6 +146,9 @@ class rospublisher(Node):
     def ctrlc_handler(self, signum, frame):
         if(self.debug_):self.timer.stop()
         if(self.debug_):self.vis.EndSession()
+        self.shut_down = 1
+        self.t_datain.join()
+        self.t_dataout.join()
         self.release_ros()
 
 def main(): 

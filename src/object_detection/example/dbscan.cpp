@@ -1,6 +1,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp/logger.hpp>
 #include <pcl_conversions/pcl_conversions.h>
+#include "object_detection/common/PointTI.h"
 #include "object_detection/cluster/dbscan.hpp"
 
 class minimalsubscriber : public rclcpp::Node
@@ -48,7 +49,7 @@ private:
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr publisher_marker;
   rclcpp::SensorDataQoS sensor_qos;
   
-  dbscan<pcl::PointXYZ, pcl::PointXYZRGB> db;
+  dbscan<PointTI, PointTIRGB> db;
   sensor_msgs::msg::PointCloud2 output;
 
   double r;

@@ -5,8 +5,6 @@ import serial
 import struct
 import numpy as np
 
-global shut_down
-shut_down = 0
 
 class get_data:
     def __init__(self, command_port="", data_port="", command_rate="115200", data_rate="921600", cfg_path="", connection=True, timeout=5):
@@ -63,14 +61,19 @@ class get_data:
             self.close()
             return None
     
+    # https://dev.ti.com/tirex/explore/node?node=A__ADnbI7zK9bSRgZqeAxprvQ__radar_toolbox__1AslXXD__LATEST#:~:text=Understanding%20the%20UART%20Data%20Output%20Format,-To%20understand%20the&text=When%20the%20chirp%20returns%20after,on%20the%20demo%20being%20run.
     def __parse_data(self, buffer):
-            start = buffer.index(self.__magicWord)+40
+            start = buffer.index(self.__magicWord)+28
             # print("start")
+            (num_points, num_tlvs, num_subframes), i = self.unpack(buffer, i=start, amount=3, data_type='I')
+            print(num_points, num_tlvs)
             ####  tvl1  ####
-            (tlv_type, tlv_length), i = self.unpack(buffer, i=start, amount=2, data_type='I')
-            # print(tlv_type, tlv_length, i)
-            num_points=int(tlv_length/16)
-            data=np.zeros((num_points,4),dtype=float)
+            (tlv_type, tlv_length), i = self.unpack(buffer, i, amount=2, data_type='I')
+            # print(tlv_type)
+            if num_points!=int(tlv_length/16):
+                print("NUMBER OF DETECTED POINTS IS NOT CORRECT")
+                return None    
+            data=np.zeros((num_points,5),dtype=float)
             if(int(tlv_type)==1):
                 for j in range(num_points):
                     try:
@@ -78,6 +81,7 @@ class get_data:
                         data[j][0]=y
                         data[j][1]=-x
                         data[j][2]=z
+                        data[j][4]=vel
                     except:
                         print("xyz fails")
             else:
@@ -86,14 +90,13 @@ class get_data:
             ####  tvl2  ####
             ## For SDK 3.x, intensity is replaced by snr in sideInfo and is parsed in the READ_SIDE_INFO code
             (tlv_type, tlv_length), i = self.unpack(buffer, i, amount=2, data_type='I')
-            # print(tlv_type, tlv_length, i)
             if(int(tlv_type)==7):
                 for j in range(num_points):
                     try:
                         ( snr, noise ), i = self.unpack(buffer, i, amount=2, data_type='h')
                         data[j][3]=float(snr/10.0)
                     except:
-                        print("snr faisl")
+                        print("snr fais")
             else:
                 print("OUTPUT_MSG_DETECTED_POINTS_SIDE_INFO WRONG")
                 return None
@@ -108,6 +111,8 @@ class get_data:
                     idx_end = self.__buffer_temp.index(self.__magicWord, idx_start+1)
                 except:
                     continue
+                print(idx_start, idx_end)
+                # print(self.__buffer_temp[idx_start:idx_end])
                 msg = self.__parse_data(self.__buffer_temp[idx_start:idx_end])
                 # print(msg.shape)
                 self.reset_timer()
@@ -115,9 +120,6 @@ class get_data:
                 yield msg
             else:
                 time.sleep(self._ms_per_frame/1000)  
-            global shut_down
-            if shut_down == 1:
-                break
         self.close()
         
     @staticmethod

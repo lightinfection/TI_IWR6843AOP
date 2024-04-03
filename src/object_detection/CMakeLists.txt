@@ -71,7 +71,7 @@ install(TARGETS
   DESTINATION lib/${PROJECT_NAME})
 
 install(DIRECTORY
-  launch rviz map
+  launch rviz map include
   DESTINATION share/${PROJECT_NAME}/
 )
 

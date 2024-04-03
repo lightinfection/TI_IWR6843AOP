@@ -9,7 +9,7 @@
 
 typedef struct
 {
-    float x, y, z;  // X, Y, Z position
+    float x, y, z, intensity, velocity;  // X, Y, Z positionm, snr and relative radial velocity
     int clusterID;  // clustered ID
 } Point;
 

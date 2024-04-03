@@ -1,15 +1,15 @@
+#pragma once
 #ifndef DBSCAN_HPP
 #define DBSCAN_HPP
 
-#include <iostream>
 #include <algorithm>
 #include <vector>
 #include <cmath>
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 #include <rclcpp/rclcpp.hpp>
+#include <pcl_conversions/pcl_conversions.h>
 #include "sensor_msgs/msg/point_cloud2.hpp"
-#include "sensor_msgs/msg/point_cloud.hpp"
 #include "sensor_msgs/sensor_msgs/point_cloud_conversion.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
 #include "object_detection/common/boundingbox.hpp"
@@ -35,10 +35,12 @@ class dbscan {
 public:    
     dbscan() 
     {
-        out_pointcloud = std::make_shared<sensor_msgs::msg::PointCloud>();
         bboxes = std::make_shared<visualization_msgs::msg::MarkerArray>();
         container = bbox();
+        out_pointcloud = typename pcl::PointCloud<PointPCL>::Ptr (new typename pcl::PointCloud<PointPCL>);
         outcloud_dbscan = typename pcl::PointCloud<PointPCLRGB>::Ptr (new typename pcl::PointCloud<PointPCLRGB>);
+        ch_snr = -1;
+        ch_vel = -1;
     }
     ~dbscan()
     {
@@ -129,19 +131,44 @@ public:
     void getpoint(const sensor_msgs::msg::PointCloud2::ConstSharedPtr& pc)
     {
         m_points.clear();
+        out_pointcloud->clear();
         outcloud_dbscan->clear();
 
-        outcloud_dbscan->header.stamp = static_cast<long int>(rclcpp::Clock().now().seconds());
-        outcloud_dbscan->header.frame_id = pc->header.frame_id;
-        sensor_msgs::convertPointCloud2ToPointCloud(*pc, *out_pointcloud);
+        pcl::fromROSMsg(*pc, *out_pointcloud);
+        outcloud_dbscan->header.frame_id = out_pointcloud->header.frame_id;
+        if (ch_snr + ch_vel < 0)
+        {
+            std::string in = pcl::getFieldsList(*out_pointcloud);
+            for (size_t c = 0; c < in.size()-8; c++)
+            {
+                if (in.substr(c, 8)=="velocity")
+                {
+                    ch_vel = 1;
+                    break;
+                }
+                ch_vel = 0;
+            }
+            for (size_t c = 0; c < in.size()-9; c++)
+            {
+                if (in.substr(c, 7)=="intensity")
+                {
+                    ch_snr = 1;
+                    break;
+                }
+                ch_snr = 0;
+            }
+        }
+        
         for (size_t i=0; i<out_pointcloud->points.size(); i++)
         {
             p.x = out_pointcloud->points[i].x;
             p.y = out_pointcloud->points[i].y;
             p.z = out_pointcloud->points[i].z;
-            // p.intensity = out_pointcloud.channels[0].values[i];
+            #ifdef PCL_NO_PRECOMPILE
+            if(ch_snr>0) p.intensity = out_pointcloud->points[i].intensity;
+            if(ch_vel>0) p.velocity = out_pointcloud->points[i].velocity;
+            #endif
             p.clusterID = UNCLASSIFIED;
-            // m_points.insert(m_points.begin(), p);
             m_points.push_back(p);
             m_pointSize = m_points.size();
         }
@@ -160,6 +187,7 @@ public:
             p.x = input->points[i].x;
             p.y = input->points[i].y;
             p.z = input->points[i].z;
+            // todo: include other msgs stored in the map;
             p.clusterID = UNCLASSIFIED;
             m_points.push_back(p);
             m_pointSize = m_points.size();
@@ -248,6 +276,7 @@ public:
             }
         }
 
+        outcloud_dbscan->header.stamp = static_cast<long int>(rclcpp::Clock().now().seconds());
         outcloud_dbscan->height = 1;
         outcloud_dbscan->width = num_points;
         outcloud_dbscan->is_dense = 1;
@@ -269,6 +298,10 @@ public:
                 outcloud_dbscan->points[j].y = points[i].y;
                 outcloud_dbscan->points[j].z = points[i].z;
                 outcloud_dbscan->points[j].rgb = (colors[points[i].clusterID - 1].value);
+                #ifdef PCL_NO_PRECOMPILE
+                if(ch_snr>0) outcloud_dbscan->points[j].intensity = points[i].intensity;
+                if(ch_vel>0) outcloud_dbscan->points[j].velocity = points[i].velocity;
+                #endif
                 // printf("%5.2lf %5.2lf %5.2lf: %d (%5.2lf)\n",
                 //         outcloud_dbscan->points[j].x, outcloud_dbscan->points[j].y, outcloud_dbscan->points[j].z, points[i].clusterID, outcloud_dbscan->points[j].rgb);
                 ++j;
@@ -326,12 +359,12 @@ public:
     Point p;
     visualization_msgs::msg::MarkerArray::SharedPtr bboxes;
     bbox container;
-    sensor_msgs::msg::PointCloud::SharedPtr out_pointcloud;
+    typename pcl::PointCloud<PointPCL>::Ptr out_pointcloud;
     typename pcl::PointCloud<PointPCLRGB>::Ptr outcloud_dbscan;
     bool success = false;
 
 private:    
-    int m_minPoints;
+    int m_minPoints, ch_snr, ch_vel;
     double m_epsilon;
     bool if_bb;
     std::string frame_id_, ns_;
