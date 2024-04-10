@@ -86,7 +86,7 @@ RUN apt-get update && \
     apt-get install --no-install-recommends -y ros-${ROS_DISTRO}-rviz2 && \
     apt-get install --no-install-recommends -y ros-${ROS_DISTRO}-cartographer-rviz && \
     apt-get install --no-install-recommends -y ros-${ROS_DISTRO}-octomap-rviz-plugins && \
-    pip3 install pyserial && \
+    pip3 install scipy PyQt5 pyserial matplotlib && \
     apt-get autoremove -y && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 RUN if [ ! -d ${ROS_WORKSPACE} ]; then mkdir ${ROS_WORKSPACE}; fi
