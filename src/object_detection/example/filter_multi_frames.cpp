@@ -118,7 +118,6 @@ private:
         set_params(filter_param, "lx", "", "ly", "lz");
         vol.set_param(filter_param.eps, filter_param.lower_limit, filter_param.upper_limit, false);
         break;
-      default: 0;
     }
 
     don_param.if_channel = this->declare_parameter("DON", true);

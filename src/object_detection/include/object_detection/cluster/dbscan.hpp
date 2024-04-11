@@ -10,7 +10,6 @@
 #include <rclcpp/rclcpp.hpp>
 #include <pcl_conversions/pcl_conversions.h>
 #include "sensor_msgs/msg/point_cloud2.hpp"
-#include "sensor_msgs/sensor_msgs/point_cloud_conversion.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
 #include "object_detection/common/boundingbox.hpp"
 
