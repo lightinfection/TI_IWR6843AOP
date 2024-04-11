@@ -51,19 +51,7 @@ class rospublisher(Node):
         ## parse ti raw data in a producer-consumer mode
         self._pcbuffer = queue.Queue(queue_size)
         self.ti = get_data(command_port=self.command_port_, data_port=self.data_port_, cfg_path=self.cfg_path_)
-
-        # if self.plot_RA_:
-        #     if RA_Mat_F.ndim > 1 and RA_Mat_T.ndim > 1:
-        #         self.heatmap.plotRA(RA_Mat_F, RA_Mat_T)
-        #     else: 
-        #         print("Parsed data is not in the correct format.")
-        #         return
-        # if self.plot_RD_:
-        #     if RD_Mat.ndim > 1:
-        #         self.heatmap.plotRD(RD_Mat)
-        #     else: 
-        #         print("Parsed data is not in the correct format.")
-        #         return
+        if self.plot_RA_ or self.plot_RD_: self.heatmap = plotHM(if_ra=self.plot_RA_, if_rd=self.plot_RD_, hang=float(self.ti._ms_per_frame/1000))
             
         self.cv = threading.Condition()
         self.t_datain = threading.Thread(target=self.__producer,args=(self.ti.read(),))
@@ -73,11 +61,8 @@ class rospublisher(Node):
         self.t_datain.start()
         self.t_dataout.start()
         
-        if self.plot_RA_ or self.plot_RD_: 
-            self.heatmap = plotHM(if_ra=self.plot_RA_, if_rd=self.plot_RD_, hang=float(self.ti._ms_per_frame/1000))
-            self.heatmap.init_hm(self.ti._rangeFFTSize, self.ti._rangeDopplerSize, self.ti._range_max, self.ti._vel_max, self.ti._range_resolution, self.ti._vel_abs_max, self.ti._numVirtualAnt, 400)
-            self.heatmap.show()
-
+        self.heatmap.show()
+        
     def __producer(self, g):
         # print("pull threading",threading.current_thread().ident)
         action = g
@@ -160,12 +145,16 @@ class rospublisher(Node):
 
     def processHeatMap(self, RA_Mat_F, RA_Mat_T, RD_Mat):
         assert self.ti.output_heat_map
+        if not self.heatmap.is_init:
+            print(self.ti.angle == 8)
+            if self.ti.angle == 8: self.heatmap.init_hm(self.ti._rangeFFTSize, self.ti._rangeDopplerSize, self.ti._range_max, self.ti._vel_max, self.ti._range_resolution, self.ti._vel_abs_max, self.ti._numVirtualAnt-4, 400)
+            if self.ti.angle == 4: self.heatmap.init_hm(self.ti._rangeFFTSize, self.ti._rangeDopplerSize, self.ti._range_max, self.ti._vel_max, self.ti._range_resolution, self.ti._vel_abs_max, self.ti._numVirtualAnt, 400)
         if self.plot_RD_: RD_Mat = np.reshape(RD_Mat, (self.ti._rangeFFTSize, self.ti._rangeDopplerSize))
         if self.plot_RA_: 
             RA_Mat = np.array([RA_Mat_T[i] + 1j * RA_Mat_F[i] for i in range(self.ti._rangeFFTSize*self.ti._numVirtualAnt)])
-            RA_Mat = np.reshape(RA_Mat, (self.ti._rangeFFTSize, self.ti._numVirtualAnt))
+            RA_Mat = np.reshape(RA_Mat, (self.ti._rangeFFTSize, self.ti._numVirtualAnt))[:,:-4] if self.ti.angle == 8 else np.reshape(RA_Mat, (self.ti._rangeFFTSize, self.ti._numVirtualAnt))
             try:
-                RA_Mat = np.abs(np.fft.fft(RA_Mat, self.ti._numVirtualAnt))
+                RA_Mat = np.abs(np.fft.fft(RA_Mat, self.ti._numVirtualAnt-4)) if self.ti.angle == 8 else np.abs(np.fft.fft(RA_Mat, self.ti._numVirtualAnt))
             except Exception as e:
                 print("Fail to perform fft for Range-Amizuth complex dtype\n" + e)
         self.heatmap.get(RA_Mat, RD_Mat)

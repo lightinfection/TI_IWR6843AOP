@@ -18,6 +18,7 @@ class get_data:
         self.config_params = {}
         self.ms_per_frame = 1000
         self.output_heat_map = False
+        self.angle = 0
         self._numVirtualAnt = TX*RX
         self.__found_key = -1
         self.__timeout = timeout
@@ -151,8 +152,9 @@ class get_data:
                             break
                 # print(tlv_type, tlv_length, remnant)
                 try:
-                    ####  tlv8  ####
+                    ####  tlv8 or tlv4 ####
                     if tlv_type == 8:
+                        self.angle = 8 if tlv_type == 8 else 4
                         if remnant >= tlv_length + (num_tlvs - 3)*(8 + self._rangeDopplerSize * self._rangeFFTSize):
                             for j in range(self._rangeFFTSize*self._numVirtualAnt):
                                 (imag, real), i = self.unpack(buffer, i, amount=2, data_type='h')

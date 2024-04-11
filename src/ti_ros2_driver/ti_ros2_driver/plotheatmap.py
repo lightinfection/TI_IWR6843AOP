@@ -7,6 +7,7 @@ import time
 
 class plotHM():
     def __init__(self, if_ra, if_rd, hang=100):
+        self.is_init = False
         self.figure = plt.figure(figsize=(10,5))
         self.num_hm = [if_ra, if_rd].count(True)
         self.if_ra_ = if_ra
@@ -38,6 +39,7 @@ class plotHM():
         else:
             if self.if_rd_: self.plot_RD(range_bins, doppler_bins, range_max, doppler_max, doppler_bias)
             if self.if_ra_: self.plot_RA(range_bins, range_max, grid_res)
+        self.is_init = True
 
     def plot_RD(self, range_bins, doppler_bins, range_max, doppler_max, doppler_bias):
         self.ax_1.set_title('Range-Doppler FFT Heatmap', fontsize=10)
@@ -89,7 +91,6 @@ class plotHM():
                 self.ax_1.add_patch(pat.Arc((0, 0), width=i*2, height=i*2, angle=90, theta1=-90, theta2=90, color='white', linewidth=0.5, linestyle=':', zorder=1))
 
     def update(self, i):
-        global shutdown
         if self.wait_times > 5:
             print("no available fft array captured.")
             self.close()
@@ -116,6 +117,7 @@ class plotHM():
             time.sleep(self.periodic)
     
     def show(self):
+        while not self.is_init: time.sleep(self.periodic)
         plt.show()
 
     def close(self):
