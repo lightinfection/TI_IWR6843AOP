@@ -151,10 +151,13 @@ class rospublisher(Node):
             if self.ti.angle == 4: self.heatmap.init_hm(self.ti._rangeFFTSize, self.ti._rangeDopplerSize, self.ti._range_max, self.ti._vel_max, self.ti._range_resolution, self.ti._vel_abs_max, self.ti._numVirtualAnt, 400)
         if self.plot_RD_: RD_Mat = np.reshape(RD_Mat, (self.ti._rangeFFTSize, self.ti._rangeDopplerSize))
         if self.plot_RA_: 
+            # https://e2e.ti.com/support/sensors-group/sensors/f/sensors-forum/1311419/iwr6843isk-ods-iwr6843isk-ods-chirp-order-and-virtual-antenna-configuration
             RA_Mat = np.array([RA_Mat_T[i] + 1j * RA_Mat_F[i] for i in range(self.ti._rangeFFTSize*self.ti._numVirtualAnt)])
-            RA_Mat = np.reshape(RA_Mat, (self.ti._rangeFFTSize, self.ti._numVirtualAnt))[:,:-4] if self.ti.angle == 8 else np.reshape(RA_Mat, (self.ti._rangeFFTSize, self.ti._numVirtualAnt))
+            RA_Mat = np.reshape(RA_Mat, (self.ti._rangeFFTSize, self.ti._numVirtualAnt))
             try:
-                RA_Mat = np.abs(np.fft.fft(RA_Mat, self.ti._numVirtualAnt-4)) if self.ti.angle == 8 else np.abs(np.fft.fft(RA_Mat, self.ti._numVirtualAnt))
+                RA_Mat = np.abs(np.fft.fft(RA_Mat, self.ti._numVirtualAnt))
+                if self.ti.angle == 8: RA_Mat = RA_Mat[:,4:]  # Range-Azimuth FFT
+                if self.ti.angle == 4: RA_Mat = RA_Mat[:,:-4] # Range-Elevation FFT
             except Exception as e:
                 print("Fail to perform fft for Range-Amizuth complex dtype\n" + e)
         self.heatmap.get(RA_Mat, RD_Mat)

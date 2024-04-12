@@ -81,14 +81,15 @@ class get_data:
         ADCDuration = numADCsample / (digOutSampleRate * 1e3)
         BW = ADCDuration * freqSlopeConst * 1e12
         PRI = (idleTime + rampEndTime) * 1e-6
-        self._range_resolution = LIGHT_SPEED / (2*BW)
-        self._range_max = self._range_resolution * numADCsample
-        self._vel_max = LIGHT_SPEED / (2 * (startFreq * 1e9 + (freqSlopeConst * 1e12) * (adcStartTime * 1e-6 + ADCDuration / 2)) * PRI) / ntx
-        self._vel_abs_max = self._vel_max / 2
-        self._vel_resolution = self._vel_max / numChirploop
-        # print(self._range_max, self._range_resolution, self._vel_abs_max, self._vel_resolution)
         self._rangeFFTSize = pow(2, math.ceil(math.log2(numADCsample)))
         self._rangeDopplerSize = pow(2, math.ceil(math.log2(numChirploop)))
+
+        self._range_resolution = LIGHT_SPEED / (2*BW)
+        self._range_max = self._range_resolution * self._rangeFFTSize
+        self._vel_max = LIGHT_SPEED / (2 * (startFreq * 1e9 + (freqSlopeConst * 1e12) * (adcStartTime * 1e-6 + ADCDuration / 2)) * PRI) / ntx
+        self._vel_abs_max = self._vel_max / 2
+        self._vel_resolution = self._vel_max / self._rangeDopplerSize
+        # print(self._range_max, self._range_resolution, self._vel_abs_max, self._vel_resolution)
     
     # https://dev.ti.com/tirex/explore/content/radar_toolbox_2_00_00_06/docs/software_guides/Understanding_UART_Data_Output_Format.html
     def __parse_data(self, buffer):
