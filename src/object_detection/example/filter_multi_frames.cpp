@@ -188,8 +188,8 @@ private:
       
       oricloud_->width = 1;
       oricloud_->height = pcl_.size();
-      oricloud_->is_dense = false;
-      oricloud_->resize(oricloud->width*oricloud->height);
+      oricloud_->is_dense = true;
+      oricloud_->resize(oricloud_->width*oricloud_->height);
       oricloud_->header.frame_id = std::string("/map");
       for (size_t i = 0; i < pcl_.size(); i++)
       {
@@ -207,18 +207,19 @@ private:
 
     if (ss == "pcd")
     {
-      if(!pcl::io::loadPCDFile(map_type, *oricloud_))
+      if(pcl::io::loadPCDFile(map_type, *oricloud_)==-1)
       {
         PCL_ERROR("Could not open file, exiting.\n");
         exit(1);
       }
-    }
+      oricloud_->header.frame_id = std::string("/map");
       if (!organized_)
       {
         std::vector<int> indices;
         pcl::removeNaNFromPointCloud(*oricloud_, *oricloud_, indices);
       }
       return true;
+    }
   }
 
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr publisher_, publisher0_, publisher1_;

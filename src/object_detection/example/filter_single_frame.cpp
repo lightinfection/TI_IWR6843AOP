@@ -22,25 +22,27 @@ public:
     oricloud = pcl::PointCloud<PointTI>::Ptr (new pcl::PointCloud<PointTI>);
     subscription_ = this->create_subscription<sensor_msgs::msg::PointCloud2>("/ti_mmwave/radar_scan_pcl", sensor_qos, std::bind(&minimalsubscriber::topic_callback, this, std::placeholders::_1));
     RCLCPP_INFO(this->get_logger(), "Subscribed! \n");
+    output = std::make_unique<sensor_msgs::msg::PointCloud2>();
+    output_1 = std::make_unique<sensor_msgs::msg::PointCloud2>();
     if (!pth.success && !sor.success) {RCLCPP_ERROR(this->get_logger(), "filter parameters setting went wrong\n");}
     if (pth.success) publisher_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("ti_PTH_filt_out_0", sensor_qos);
     if (sor.success) publisher1_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("ti_SOR_filt_out_0", sensor_qos);
   }
 
 private:
-  void topic_callback(const sensor_msgs::msg::PointCloud2::ConstSharedPtr& input)
+  void topic_callback(const sensor_msgs::msg::PointCloud2::UniquePtr& input)
   {
     pcl::fromROSMsg(*input, *oricloud);
     if(pth.success)
     {
       pth.run(oricloud);
-      pcl::toROSMsg(*pth.outcloud_pth, output);
-      publisher_->publish(output);
+      pcl::toROSMsg(*pth.outcloud_pth, *output);
+      publisher_->publish(*output);
       if (sor.success)
       {
         sor.run(pth.outcloud_pth);
-        pcl::toROSMsg(*sor.outcloud_sat, output_1);
-        publisher1_->publish(output_1);
+        pcl::toROSMsg(*sor.outcloud_sat, *output_1);
+        publisher1_->publish(*output_1);
       }
     }
     else
@@ -48,8 +50,8 @@ private:
       if (sor.success)
       {
         sor.run(oricloud);
-        pcl::toROSMsg(*sor.outcloud_sat, output_1);
-        publisher1_->publish(output_1);
+        pcl::toROSMsg(*sor.outcloud_sat, *output_1);
+        publisher1_->publish(*output_1);
       }
     }
     return;
@@ -89,7 +91,7 @@ private:
   passthrough_filter<PointTI> pth;
   stat_outlier<PointTI> sor;
   pcl::PointCloud<PointTI>::Ptr oricloud;
-  sensor_msgs::msg::PointCloud2 output, output_1;
+  sensor_msgs::msg::PointCloud2::UniquePtr output, output_1;
 
   config pth_param;
   param sor_param;

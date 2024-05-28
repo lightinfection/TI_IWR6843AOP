@@ -15,6 +15,7 @@ public:
     sensor_qos.keep_last(10);
     subscription_ = this->create_subscription<sensor_msgs::msg::PointCloud2>("/ti_mmwave/radar_scan_pcl", sensor_qos, std::bind(&minimalsubscriber::topic_callback, this, std::placeholders::_1));
     RCLCPP_INFO(this->get_logger(), "Subscribed! \n");
+    output = std::make_unique<sensor_msgs::msg::PointCloud2>();
     if(db.success) 
     {
       publisher_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("dbscan_output", sensor_qos);
@@ -24,11 +25,11 @@ public:
   }
 
 private:
-  void topic_callback(const sensor_msgs::msg::PointCloud2::ConstSharedPtr& input)
+  void topic_callback(const sensor_msgs::msg::PointCloud2::UniquePtr& input)
   {
     db.run(input);
-    pcl::toROSMsg(*db.outcloud_dbscan, output);
-    publisher_->publish(output);
+    pcl::toROSMsg(*db.outcloud_dbscan, *output);
+    publisher_->publish(*output);
     if (bb) publisher_marker->publish(*db.bboxes);
 
     return;
@@ -50,7 +51,7 @@ private:
   rclcpp::SensorDataQoS sensor_qos;
   
   dbscan<PointTI, PointTIRGB> db;
-  sensor_msgs::msg::PointCloud2 output;
+  sensor_msgs::msg::PointCloud2::UniquePtr output;
 
   double r;
   int num;

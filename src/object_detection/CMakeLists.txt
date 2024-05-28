@@ -43,6 +43,7 @@ endif()
 add_executable(filter_single_frame example/filter_single_frame.cpp)
 add_executable(filter_multi_frames example/filter_multi_frames.cpp)
 add_executable(dbscan example/dbscan.cpp)
+add_executable(test_icp example/test_icp.cpp)
 
 target_link_libraries(filter_single_frame
   ${Boost_SYSTEM_LIBRARY}
@@ -56,6 +57,10 @@ target_link_libraries(dbscan
   ${Boost_SYSTEM_LIBRARY}
   ${PCL_LIBRARIES}
 )
+target_link_libraries(test_icp
+  ${Boost_SYSTEM_LIBRARY}
+  ${PCL_LIBRARIES}
+)
 
 ament_target_dependencies(filter_single_frame
 rclcpp PCL pcl_conversions pcl_ros)
@@ -63,11 +68,14 @@ ament_target_dependencies(filter_multi_frames
 rclcpp PCL pcl_conversions pcl_ros octomap visualization_msgs)
 ament_target_dependencies(dbscan
 rclcpp PCL pcl_conversions pcl_ros visualization_msgs)
+ament_target_dependencies(test_icp
+rclcpp PCL pcl_conversions pcl_ros octomap visualization_msgs)
 
 install(TARGETS
   filter_single_frame
   filter_multi_frames
   dbscan
+  test_icp
   DESTINATION lib/${PROJECT_NAME})
 
 install(DIRECTORY

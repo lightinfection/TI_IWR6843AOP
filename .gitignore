@@ -3,4 +3,5 @@ build/
 install/
 log/
 src/ti_ros2_driver/debug/result.json
+src/object_detection/map/*.pcd
 .vscode/

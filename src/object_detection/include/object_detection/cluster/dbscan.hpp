@@ -127,7 +127,7 @@ public:
         return pow(pointCore.x - pointTarget.x,2)+pow(pointCore.y - pointTarget.y,2)+pow(pointCore.z - pointTarget.z,2);
     }
 
-    void getpoint(const sensor_msgs::msg::PointCloud2::ConstSharedPtr& pc)
+    void getpoint(const sensor_msgs::msg::PointCloud2::UniquePtr& pc)
     {
         m_points.clear();
         out_pointcloud->clear();
@@ -311,7 +311,7 @@ public:
         }     
     }
 
-    void run(const sensor_msgs::msg::PointCloud2::ConstSharedPtr& input)
+    void run(const sensor_msgs::msg::PointCloud2::UniquePtr& input)
     {
         if (input->width>0)
         {
