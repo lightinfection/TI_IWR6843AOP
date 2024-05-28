@@ -33,7 +33,7 @@ class get_data:
         except serial.SerialException:
             auth1 = os.system("sudo chmod +777 " + command_port)
             if auth1==256 or auth1==1:
-                sys.stttderr.write("Authorization of cli_port failed... \n")
+                sys.stderr.write("Authorization of cli_port failed... \n")
                 os._exit(1)
             auth2 = os.system("sudo chmod +777 " + data_port)
             if auth2==256 or auth2==1:
