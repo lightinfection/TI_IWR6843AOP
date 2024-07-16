@@ -263,7 +263,7 @@ class get_data:
                             state, i = self.unpack(buffer, i, amount=9, data_type='f')
                             for id, state_var in enumerate(state):
                                 tar_data[j][id] = state_var
-                                conv, i = self.unpack(buffer, i, amount=4, data_type='f')
+                            conv, i = self.unpack(buffer, i, amount=4, data_type='f')
                             conv_mat = list(conv)
                     except Exception as e:
                         print("Getting target list failed", e)

@@ -4,7 +4,7 @@ out_of_box_6843_aop.bin
     -- The most basic out-of-box binary. 
     -- Two applicable configure files are provided for this bin: base.cfg, RADheatmap.cfg;
 3D_people_track_6843_demo.bin 
-    -- The 3d-tracking binary, which is applicable to ti people_tracking and small_obstacle_detection lab demos. 
+    -- The 3d-tracking binary, which is applicable to ti people_counting and small_obstacle_detection lab demos. 
     -- Three applicable configure files are provided for this bin: 3d_tracking_high_detection.cfg, 3d_tracking_indoor.cfg, 3d_tracking_low_noise.cfg
     -- !!!!! Notice: Under my current driver version, "tracking" is the key word of cfg file names. 
     -- !!!!! If the "tracking" string is added when renaming, the sensor will automatically start in this 3d_tracking mode, otherwise in the aforementioned normal out-of-box demo mode.

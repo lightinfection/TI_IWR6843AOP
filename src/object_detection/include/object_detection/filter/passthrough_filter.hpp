@@ -31,10 +31,26 @@ typedef struct channel_
 
     ~passthrough_filter() 
     {
-        if(x_c) delete x_c;
-        if(y_c) delete y_c;
-        if(z_c) delete z_c;
-        if(i_c) delete i_c;
+        if(x_c) 
+        {
+            delete x_c;
+            x_c = NULL;
+        }
+        if(y_c)
+        {
+            delete y_c;  
+            y_c = NULL;
+        } 
+        if(z_c)
+        {
+            delete z_c;
+            z_c = NULL;
+        }
+        if(i_c)
+        {
+            delete i_c;
+            i_c = NULL;
+        }
     }
 
     void set_border(channel* ch, const double& lower, const double& upper, const bool& ifreverse)
