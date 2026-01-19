@@ -70,22 +70,20 @@ class rospublisher(Node):
         self.ti = get_data(command_port=self.command_port_, data_port=self.data_port_, cfg_path=self.cfg_path_, roi=roi)
         if self.plot_RA_ or self.plot_RD_: self.heatmap = plotHM(if_ra=self.plot_RA_, if_rd=self.plot_RD_, hang=float(self.ti._ms_per_frame/1000))
             
-        self.cv = threading.Condition()
-        self.t_datain = threading.Thread(target=self.__producer,args=(self.ti.read(),))
+        self.lock = threading.Lock()
+        self.cv = threading.Condition(self.lock)
+        self.t_datain = threading.Thread(target=self.__producer, args=(self.ti.read(),))
         self.t_dataout = threading.Thread(target=self.__consumer)
         self.shut_down = 0
         if self.debug_: self.enterDebugMode()
-        self.t_datain.start()
-        self.t_dataout.start()
         
         if self.plot_RA_ or self.plot_RD_: self.heatmap.show()
         
     def __producer(self, g):
-        # print("pull threading",threading.current_thread().ident)
         action = g
         empty_times = 0
-        while self.shut_down==0:
-            time.sleep(float(self.ti._ms_per_frame/4000))
+        if self.debug_: producer_timer = InstrumentationTimer()
+        while self.shut_down == 0:
             if empty_times > 20:
                 if self.debug_: 
                     producer_timer.stop()
@@ -93,64 +91,86 @@ class rospublisher(Node):
                     self.vis.EndSession()
                 self.get_logger().error("No data received for more than 20 times, queue released")
                 self.shut_down = 1
-            if self.debug_: producer_timer = InstrumentationTimer()
+                with self.cv:
+                    self.cv.notify()
+                break
+                
             try:
                 if not self.ti.cfg_mode:
-                    if not self.ti.output_heat_map: res = next(action)
-                    else: res, ra_0, ra_1, rd = next(action)
-                else: res, res_tar, res_conv = next(action)
+                    if not self.ti.output_heat_map: 
+                        res = next(action)
+                    else: 
+                        res, ra_0, ra_1, rd = next(action)
+                else: 
+                    res, res_tar, res_conv = next(action)
                 empty_times = 0
-            except:
+            except Exception as e:
                 action = g
                 empty_times += 1
-            try:
-                self.cv.acquire()
+                self.get_logger().error(f"{empty_times}: Failed to put general data in buffer: {e}")
+                continue
+                
+            with self.cv:
+                while self._pcbuffer.full():
+                    self.get_logger().warning("Buffer is full, waiting for consumer")
+                    self.cv.wait()
                 if not self.ti.cfg_mode:
-                    if not self.ti.output_heat_map: self._pcbuffer.put_nowait(res)
-                    else: self._pcbuffer.put_nowait([res, ra_0, ra_1, rd])
-                else: self._pcbuffer.put_nowait([res, res_tar, res_conv])
-                # print("after putting, size is ", self._pcbuffer.qsize())
+                    if not self.ti.output_heat_map: 
+                        self._pcbuffer.put_nowait(res)
+                    else: 
+                        self._pcbuffer.put_nowait([res, ra_0, ra_1, rd])
+                else: 
+                    self._pcbuffer.put_nowait([res, res_tar, res_conv])
                 self.cv.notify()
-                self.cv.release()
-            except Exception as e:
-                self.cv.release()
-                # print(e)
+                
             if self.debug_: producer_timer.stop()
         if rclpy.ok(): self.release_ros()
 
             
     def __consumer(self):
-        while self.shut_down==0:
+        while self.shut_down == 0:
             if self.debug_: consumer_timer = InstrumentationTimer()
-            self.cv.acquire()
-            self.cv.wait()
-            while True:
+            
+            ti_data = None
+            with self.cv:
+                while self._pcbuffer.empty() and self.shut_down == 0:
+                    self.get_logger().warning("No data in the buffer, waiting for producer")
+                    self.cv.wait()
+                if self.shut_down == 1:
+                    if self.debug_: consumer_timer.stop()
+                    self.get_logger().error("Shutting down due to producer thread, exiting consumer thread")
+                    break
                 try:
                     if not self.ti.cfg_mode:
-                        if not self.ti.output_heat_map: ti_pc = self._pcbuffer.get_nowait()
+                        if not self.ti.output_heat_map: 
+                            ti_pc = self._pcbuffer.get_nowait()
                         else: 
                             ti_data = self._pcbuffer.get_nowait()
                             ti_pc = ti_data[0]
                     else:
-                            ti_data = self._pcbuffer.get_nowait()
-                            ti_pc = ti_data[0]
-                    # print("after getting, size is ", self._pcbuffer.qsize())
-                    break
-                except Exception as e:
-                    self.get_logger().error(e)
-            self.cv.release()
+                        ti_data = self._pcbuffer.get_nowait()
+                        ti_pc = ti_data[0]
+                except queue.Empty:
+                    continue
+                self.cv.notify()
+                
+            if ti_data is None:
+                continue
+                
             (pcl_msg, num_points) = self.processPointCloud(ti_pc)
             if self.plot_RD_ or self.plot_RA_: self.processHeatMap(ti_data[1], ti_data[2], ti_data[3])
             if self.publish_tar: (tar_msg, num_tars) = self.processTargetTracker(ti_data[1], ti_data[2])
+            
             if rclpy.ok(): 
                 self.publisher_.publish(pcl_msg)
                 if self.publish_tar: self.target_publisher_.publish(tar_msg)
             else: return
+            
             if self.debug_: 
                 self.get_logger().info('Publishing %s points' % num_points)
                 if self.publish_tar: self.get_logger().info('Detected %s points' % num_tars)
+            
             pcl_msg.fields.clear()
-            time.sleep(float(self.ti._ms_per_frame/1000))
             if self.debug_: consumer_timer.stop()
 
     def processPointCloud(self, pc):
@@ -221,6 +241,18 @@ class rospublisher(Node):
         self.vis.BeginSession(self.debug_log_path_)
         self.timer = InstrumentationTimer()
 
+    def start(self):
+        self.t_datain.start()
+        self.t_dataout.start()
+
+    def stop(self):
+        self.shut_down = 1
+        with self.cv:
+            self.cv.notify_all()
+        self.t_datain.join()
+        self.t_dataout.join()
+        self.release_ros()
+
     def release_ros(self):
         print("Clearing ros node")
         with self._pcbuffer.mutex:
@@ -234,15 +266,14 @@ class rospublisher(Node):
         if self.plot_RA_ or self.plot_RD_: self.heatmap.close()
         if self.debug_:self.timer.stop()
         if self.debug_:self.vis.EndSession()
-        self.shut_down = 1
-        self.t_datain.join()
-        self.t_dataout.join()
-        self.release_ros()
+        self.stop()
 
 def main(): 
     rclpy.init()
     minimal_publisher = rospublisher()
     signal.signal(signal.SIGINT, minimal_publisher.ctrlc_handler)
+    minimal_publisher.start()
+    rclpy.spin(minimal_publisher)
 
 if __name__ == '__main__':
     main()
